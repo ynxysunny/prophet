@@ -257,7 +257,7 @@ class TestProphetDataPrep:
 
 class TestProphetTrendComponent:
     def test_invalid_growth_input(self, backend):
-        msg = 'Parameter "growth" should be "linear", ' '"logistic" or "flat".'
+        msg = 'Parameter "growth" should be "linear", ' '"logistic", "flat" or "stepwise".'
         with pytest.raises(ValueError, match=msg):
             Prophet(growth="constant", stan_backend=backend)
 
