@@ -1211,7 +1211,7 @@ class Prophet(object):
         elif self.growth == 'flat':
             k, m = self.flat_growth_init(self.history)
             m_ = [m]
-        elif self.growht == 'stepwise':
+        elif self.growth == 'stepwise':
             k, m_ = self.stepwise_growth_init(self.history, self.changepoints)
             m = m_[0]
         elif self.growth == 'logistic':
@@ -1275,8 +1275,10 @@ class Prophet(object):
         self.stan_fit = self.stan_backend.stan_fit
 
         # If stepwise trend
-        if self.growth == 'stepwise' and len(self.changepoints) != 0:
-            self.params['delta'] = np.ones(self.params['delta'].shape)
+        if self.growth == 'stepwise':
+            self.params['m_'] = stan_init['m_']
+            if len(self.changepoints) != 0:
+                self.params['delta'] = np.ones(self.params['delta'].shape)
 
         # If no changepoints were requested, replace delta with 0s
         if len(self.changepoints) == 0:
