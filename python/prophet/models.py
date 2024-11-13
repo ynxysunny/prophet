@@ -22,6 +22,7 @@ class TrendIndicator(Enum):
     LINEAR = 0
     LOGISTIC = 1
     FLAT = 2
+    STEPWISE = 3
 
 @dataclass
 class ModelInputData:
@@ -46,6 +47,7 @@ class ModelParams:
     delta: Sequence[float]  # length S
     beta: Sequence[float]  # length K
     sigma_obs: float
+    m_: Sequence[float]
 
 
 class IStanBackend(ABC):
@@ -206,7 +208,8 @@ class CmdStanPyBackend(IStanBackend):
             'm': init['m'],
             'delta': init['delta'].tolist(),
             'beta': init['beta'].tolist(),
-            'sigma_obs': init['sigma_obs']
+            'sigma_obs': init['sigma_obs'],
+            'm_':init['m_']
         }
         return (cmdstanpy_init, cmdstanpy_data)
 

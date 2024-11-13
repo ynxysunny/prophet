@@ -1275,7 +1275,7 @@ class Prophet(object):
         self.stan_fit = self.stan_backend.stan_fit
 
         # If stepwise trend
-        if self.growth == 'stepwise' & len(self.changepoints) != 0:
+        if self.growth == 'stepwise' and len(self.changepoints) != 0:
             self.params['delta'] = np.ones(self.params['delta'].shape)
 
         # If no changepoints were requested, replace delta with 0s
