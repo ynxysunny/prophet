@@ -1128,7 +1128,7 @@ class Prophet(object):
         changepoints: changepoint dates.
         Returns
         -------
-        A tuple (k, m) with the rate (k) and offsets (m) of the linear growth
+        A tuple (k, m) with the rate (k) and offsets (m) of the flat growth
         function for each period(changepoints+1).
         """
         k = 0
@@ -1416,7 +1416,6 @@ class Prophet(object):
         ----------
         t: np.array of times on which the function is evaluated.
         deltas: np.array of rate changes at each changepoint.
-        k: Float initial rate.
         m: Float initial offset.
         changepoint_ts: np.array of changepoint times.
         Returns
@@ -1424,9 +1423,9 @@ class Prophet(object):
         Vector y(t).
         """
         if changepoint_ts[0] == 0:
-            m_t = m * np.ones_like(t)
+            m_t = m[0] * np.ones_like(t)
         else:
-            m_t = np.ones_like(t)
+            m_t = np.ones_like(t)*m[0]
             last_t_s = changepoint_ts[0]-1
             for s, t_s in enumerate(changepoint_ts):
                 # Getting the times between the two changepoints
