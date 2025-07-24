@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prophet import Prophet
-from prophet.utilities import warm_start_params
+from stepwise_prophet import Prophet
+from stepwise_prophet.utilities import warm_start_params
 
 
 def train_test_split(ts_data: pd.DataFrame, n_test_rows: int) -> pd.DataFrame:

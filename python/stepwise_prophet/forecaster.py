@@ -17,9 +17,9 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from prophet.make_holidays import get_holiday_names, make_holidays_df
-from prophet.models import StanBackendEnum, ModelInputData, ModelParams, TrendIndicator
-from prophet.plot import (plot, plot_components)
+from stepwise_prophet.make_holidays import get_holiday_names, make_holidays_df
+from stepwise_prophet.models import StanBackendEnum, ModelInputData, ModelParams, TrendIndicator
+from stepwise_prophet.plot import (plot, plot_components)
 
 logger = logging.getLogger('prophet')
 logger.setLevel(logging.INFO)
@@ -159,13 +159,15 @@ class Prophet(object):
             for i in StanBackendEnum:
                 try:
                     logger.debug("Trying to load backend: %s", i.name)
-                    return self._load_stan_backend(i.name)
+                    self._load_stan_backend(i.name)
+                    return
                 except Exception as e:
                     logger.debug("Unable to load backend %s (%s), trying the next one", i.name, e)
         else:
             self.stan_backend = StanBackendEnum.get_backend_class(stan_backend)()
 
-        logger.debug("Loaded stan backend: %s", self.stan_backend.get_type())
+        if hasattr(self, 'stan_backend'):
+            logger.debug("Loaded stan backend: %s", self.stan_backend.get_type())
 
     def validate_inputs(self):
         """Validates the inputs to Prophet."""

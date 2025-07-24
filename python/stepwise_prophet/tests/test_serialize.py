@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prophet import Prophet
-from prophet.serialize import PD_DATAFRAME, PD_SERIES, model_from_json, model_to_json
+from stepwise_prophet import Prophet
+from stepwise_prophet.serialize import PD_DATAFRAME, PD_SERIES, model_from_json, model_to_json
 
 
 class TestSerialize:

@@ -1,8 +1,8 @@
-# Prophet: Automatic Forecasting Procedure
+# Stepwise-Prophet: Automatic Forecasting Procedure with Stepwise Trend
 
-Prophet is a procedure for forecasting time series data based on an additive model where non-linear trends are fit with yearly, weekly, and daily seasonality, plus holiday effects. It works best with time series that have strong seasonal effects and several seasons of historical data. Prophet is robust to missing data and shifts in the trend, and typically handles outliers well.
+Stepwise-Prophet is a fork of Facebook's Prophet that adds support for stepwise (piecewise flat) trend modeling. This extends the original Prophet forecasting procedure to handle time series with sudden level changes while maintaining all original functionality including yearly, weekly, and daily seasonality, plus holiday effects.
 
-Prophet is [open source software](https://code.facebook.com/projects/>)  released by [Facebook's Core Data Science team ](https://research.fb.com/category/data-science/).
+This package is based on Prophet, which is [open source software](https://code.facebook.com/projects/>)  released by [Facebook's Core Data Science team ](https://research.fb.com/category/data-science/).
 
 Full documentation and examples available at the homepage: https://facebook.github.io/prophet/
 
@@ -30,13 +30,13 @@ See [Installation in Python - Development version](https://github.com/facebook/p
 
 Simply type `make build` and if everything is fine you should be able to `make shell` or alternative jump directly to `make py-shell`.
 
-To run the tests, inside the container `cd python/prophet` and then `python -m pytest prophet/tests/`
+To run the tests, inside the container `cd python/stepwise_prophet` and then `python -m pytest stepwise_prophet/tests/`
 
 ### Example usage
 
 ```python
-  >>> from prophet import Prophet
-  >>> m = Prophet()
+  >>> from stepwise_prophet import Prophet
+  >>> m = Prophet(growth='stepwise')  # Use stepwise trend modeling
   >>> m.fit(df)  # df is a pandas.DataFrame with 'y' and 'ds' columns
   >>> future = m.make_future_dataframe(periods=365)
   >>> m.predict(future)

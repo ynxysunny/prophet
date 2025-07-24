@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prophet import Prophet, diagnostics
+from stepwise_prophet import Prophet, diagnostics
 
 
 @pytest.fixture(scope="module")

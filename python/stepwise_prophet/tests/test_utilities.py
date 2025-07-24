@@ -5,8 +5,8 @@
 
 import numpy as np
 
-from prophet import Prophet
-from prophet.utilities import regressor_coefficients
+from stepwise_prophet import Prophet
+from stepwise_prophet.utilities import regressor_coefficients
 
 
 class TestUtilities:

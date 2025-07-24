@@ -18,7 +18,7 @@ from wheel.bdist_wheel import bdist_wheel
 
 
 MODEL_DIR = "stan"
-MODEL_TARGET_DIR = os.path.join("prophet", "stan_model")
+MODEL_TARGET_DIR = os.path.join("stepwise_prophet", "stan_model")
 
 CMDSTAN_VERSION = "2.33.1"
 BINARIES_DIR = "bin"
@@ -193,20 +193,21 @@ class BDistWheelABINone(bdist_wheel):
 
 about = {}
 here = Path(__file__).parent.resolve()
-with open(here / "prophet" / "__version__.py", "r") as f:
+with open(here / "stepwise_prophet" / "__version__.py", "r") as f:
     exec(f.read(), about)
 
 setup(
+    name="stepwise-prophet",
     version=about["__version__"],
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
-    ext_modules=[Extension("prophet.stan_model", [])],
+    ext_modules=[Extension("stepwise_prophet.stan_model", [])],
     cmdclass={
         "build_ext": BuildExtCommand,
         "build_py": BuildPyCommand,
         "editable_wheel": EditableWheel,
         "bdist_wheel": BDistWheelABINone,
     },
-    test_suite="prophet.tests",
+    test_suite="stepwise_prophet.tests",
 )

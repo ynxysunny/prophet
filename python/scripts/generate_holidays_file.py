@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 
 from holidays import list_supported_countries
-from prophet.make_holidays import make_holidays_df
+from stepwise_prophet.make_holidays import make_holidays_df
 
 
 def utf8_to_ascii(text: str) -> str:
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     import pathlib
 
     if not pathlib.Path.cwd().stem == "python":
-        raise RuntimeError("Run script from prophet/python directory")
+        raise RuntimeError("Run script from stepwise-prophet/python directory")
     OUT_CSV_PATH = pathlib.Path(".") / ".." / "R/data-raw/generated_holidays.csv"
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--outfile", default=OUT_CSV_PATH)

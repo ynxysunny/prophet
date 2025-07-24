@@ -14,7 +14,7 @@ import importlib_resources
 import platform
 
 import logging
-logger = logging.getLogger('prophet.models')
+logger = logging.getLogger('stepwise_prophet.models')
 
 PLATFORM = "win" if platform.platform().startswith("Win") else "unix"
 
@@ -91,7 +91,7 @@ class CmdStanPyBackend(IStanBackend):
     def __init__(self):
         import cmdstanpy
         # this must be set before super.__init__() for load_model to work on Windows
-        local_cmdstan = importlib_resources.files("prophet") / "stan_model" / f"cmdstan-{self.CMDSTAN_VERSION}"
+        local_cmdstan = importlib_resources.files("stepwise_prophet") / "stan_model" / f"cmdstan-{self.CMDSTAN_VERSION}"
         if local_cmdstan.exists():
             cmdstanpy.set_cmdstan_path(str(local_cmdstan))
         super().__init__()
@@ -102,7 +102,7 @@ class CmdStanPyBackend(IStanBackend):
 
     def load_model(self):
         import cmdstanpy
-        model_file = importlib_resources.files("prophet") / "stan_model" / "prophet_model.bin"
+        model_file = importlib_resources.files("stepwise_prophet") / "stan_model" / "prophet_model.bin"
         return cmdstanpy.CmdStanModel(exe_file=str(model_file))
 
     def fit(self, stan_init, stan_data, **kwargs):

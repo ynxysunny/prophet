@@ -11,7 +11,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from prophet.diagnostics import performance_metrics
+from stepwise_prophet.diagnostics import performance_metrics
 
 logger = logging.getLogger('prophet.plot')
 
@@ -498,7 +498,7 @@ def plot_cross_validation_metric(
 
     Parameters
     ----------
-    df_cv: The output from prophet.diagnostics.cross_validation.
+    df_cv: The output from stepwise_prophet.diagnostics.cross_validation.
     metric: Metric name, one of ['mse', 'rmse', 'mae', 'mape', 'coverage'].
     rolling_window: Proportion of data to use for rolling average of metric.
         In [0, 1]. Defaults to 0.1.

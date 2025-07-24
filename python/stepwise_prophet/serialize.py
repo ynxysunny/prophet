@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from prophet.forecaster import Prophet
+from stepwise_prophet.forecaster import Prophet
 
 about = {}
 here = Path(__file__).parent.resolve()
