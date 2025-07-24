@@ -280,6 +280,15 @@ class TestProphetTrendComponent:
         assert k == 0
         assert m == pytest.approx(0.49335657, abs=1e-4)
 
+        k, m = model.stepwise_growth_init(history, changepoints=[]) #assume zero changepoints for test
+        assert k == 0
+        assert m[0] == pytest.approx(0.49335657, abs=1e-4)
+
+        k, m = model.stepwise_growth_init(history, changepoints=pd.Series(pd.Timestamp('2012-08-16'))) #assume zero changepoints for test
+        assert k == 0
+        assert m[0] == pytest.approx(0.39074892, abs=1e-4)
+        assert m[1] == pytest.approx(0.50902572, abs=1e-4)
+
     def test_growth_init_minmax(self, daily_univariate_ts, backend):
         model = Prophet(growth="logistic", stan_backend=backend, scaling="minmax")
         train = daily_univariate_ts.iloc[:468].copy()
@@ -380,6 +389,19 @@ class TestProphetTrendComponent:
         y_true = y_true[8:]
         y = model.flat_trend(t, m)
         assert (y - y_true).sum() == 0.0
+    
+    def test_stepwise_trend(self, backend):
+        """Test the stepwise trend function directly"""
+        model = Prophet(stan_backend=backend)
+
+        # Test with simple stepwise pattern
+        t = np.arange(10)
+        m = [10, 20, 15]  # Three flat segments
+        changepoint_ts = np.array([3, 7])
+
+        y = model.stepwise(t, m, changepoint_ts)
+        y_true = np.array([10, 10, 10, 20, 20, 20,20, 15, 15, 15])
+        assert (y - y_true).sum() == pytest.approx(0.0, abs=1e-5)
 
     def test_get_changepoints(self, daily_univariate_ts, backend):
         """
