@@ -32,7 +32,7 @@ class Prophet(object):
 
     Parameters
     ----------
-    growth: String 'linear', 'logistic' or 'flat' to specify a linear, logistic or
+    growth: String 'linear', 'logistic', 'flat', or 'stepwise' to specify a linear, logistic or
         flat trend.
     changepoints: List of dates at which to include potential changepoints. If
         not specified, potential changepoints are selected automatically.
@@ -172,9 +172,9 @@ class Prophet(object):
 
     def validate_inputs(self):
         """Validates the inputs to Prophet."""
-        if self.growth not in ('linear', 'logistic', 'flat'):
+        if self.growth not in ('linear', 'logistic', 'flat', 'stepwise'):
             raise ValueError(
-                'Parameter "growth" should be "linear", "logistic" or "flat".')
+                'Parameter "growth" should be "linear", "logistic", "flat", or "stepwise".')
         if not isinstance(self.changepoint_range, (int, float)):
             raise ValueError("changepoint_range must be a number in [0, 1]'")
         if ((self.changepoint_range < 0) or (self.changepoint_range > 1)):
@@ -1117,6 +1117,40 @@ class Prophet(object):
         k = 0
         m = df['y_scaled'].mean()
         return k, m
+    
+    @staticmethod 
+    def stepwise_growth_init(df, changepoints):
+        """Initialize stepwise growth.
+        Provides a strong initialization for stepwise flat growth. Sets the growth to 0 
+        and offset parameter as mean of history y_scaled values for each period(changepoints+1).
+        
+        Parameters
+        ----------
+        df: pd.DataFrame with columns ds (date), y_scaled (scaled time series),
+            and t (scaled time).
+        changepoints: changepoint dates.
+        Returns
+        -------
+        A tuple (k, m) with the rate (k) and offsets (m) of the flat growth
+        function for each period(changepoints+1).
+        """
+        k = 0
+        # Just use multiple means with changepoints
+        if len(changepoints) == 0:
+            k = 0
+            m = [df['y_scaled'].mean()]
+        else:
+            m = []
+            last_cp = pd.Timestamp.min
+            for cp in changepoints:
+                df_  = df[(df.ds >= last_cp) & (df.ds < cp)]['y_scaled']
+                m.append(df_.mean())
+                last_cp = cp
+            cp = changepoints.iloc[-1]
+            df_  = df[df.ds >= cp]['y_scaled']
+
+            m.append(df_.mean())
+        return k, m
 
     def preprocess(self, df: pd.DataFrame, **kwargs) -> ModelInputData:
         """
@@ -1145,7 +1179,7 @@ class Prophet(object):
 
         self.set_changepoints()
 
-        if self.growth in ['linear', 'flat']:
+        if self.growth in ['linear', 'flat', 'stepwise']:
             cap = np.zeros(self.history.shape[0])
         else:
             cap = self.history['cap_scaled']
@@ -1176,16 +1210,23 @@ class Prophet(object):
         """
         if self.growth == 'linear':
             k, m = self.linear_growth_init(self.history)
+            m_ = [m]
         elif self.growth == 'flat':
             k, m = self.flat_growth_init(self.history)
+            m_ = [m]
+        elif self.growth == 'stepwise':
+            k, m_ = self.stepwise_growth_init(self.history, self.changepoints)
+            m = m_[0]
         elif self.growth == 'logistic':
             k, m = self.logistic_growth_init(self.history)
+            m_ = [m]
         return ModelParams(
             k=k,
             m=m,
             delta=np.zeros_like(self.changepoints_t),
             beta=np.zeros(num_total_regressors),
             sigma_obs=1.0,
+            m_ = m_, # for stepwise growth 
         )
 
     def fit(self, df, **kwargs):
@@ -1224,7 +1265,7 @@ class Prophet(object):
         stan_init = dataclasses.asdict(initial_params)
 
         if self.history['y'].min() == self.history['y'].max() and \
-                (self.growth == 'linear' or self.growth == 'flat'):
+                (self.growth == 'linear' or self.growth == 'flat' or self.growth == 'stepwise'):
             self.params = stan_init
             self.params['sigma_obs'] = 1e-9
             for par in self.params:
@@ -1235,6 +1276,13 @@ class Prophet(object):
             self.params = self.stan_backend.fit(stan_init, dat, **kwargs)
 
         self.stan_fit = self.stan_backend.stan_fit
+
+        # If stepwise trend
+        if self.growth == 'stepwise':
+            self.params['m_'] = stan_init['m_']
+            if len(self.changepoints) != 0:
+                self.params['delta'] = np.ones(self.params['delta'].shape)
+
         # If no changepoints were requested, replace delta with 0s
         if len(self.changepoints) == 0:
             # Fold delta into the base rate k
@@ -1364,6 +1412,41 @@ class Prophet(object):
         m_t = m * np.ones_like(t)
         return m_t
 
+    @staticmethod
+    def stepwise(t, m, changepoint_ts):
+        """Evaluate the stepwise trend function.
+        Parameters
+        ----------
+        t: np.array of times on which the function is evaluated.
+        deltas: np.array of rate changes at each changepoint.
+        m: Float initial offset.
+        changepoint_ts: np.array of changepoint times.
+        Returns
+        -------
+        Vector y(t).
+        """
+        if changepoint_ts[0] == 0:
+            m_t = m[0] * np.ones_like(t)
+        else:
+            m_t = np.ones_like(t)*m[0]
+            last_t_s = changepoint_ts[0]-1
+            for s, t_s in enumerate(changepoint_ts):
+                # Getting the times between the two changepoints
+                indx = (t < t_s) & (t >= last_t_s)
+                i = s
+                # If s is bigger than periods use the last trend
+                if s >= len(m):
+                    i = len(m)-1
+                m_t[indx] = m[i]
+                last_t_s = t_s
+
+            # Evaluate the part after the last changepoint 
+            t_s = changepoint_ts[-1]
+            indx = (t >= t_s) 
+            m_t[indx] = m[-1]
+
+        return m_t
+
     def predict_trend(self, df):
         """Predict trend using the prophet model.
 
@@ -1389,6 +1472,9 @@ class Prophet(object):
         elif self.growth == 'flat':
             # constant trend
             trend = self.flat_trend(t, m)
+        elif self.growth == 'stepwise':
+            # stepwise trend
+            trend = self.stepwise(t, self.params['m_'], self.changepoints_t)            
 
         return trend * self.y_scale + df['floor']
 
@@ -1625,6 +1711,8 @@ class Prophet(object):
                                             changepoint_ts)
         elif self.growth == 'flat':
             trend = self.flat_trend(t, m)
+        elif self.growth == 'stepwise':
+            trend = self.stepwise(t, self.params['m_'], changepoint_ts)        
 
         return trend * self.y_scale + df['floor']
 
@@ -1652,6 +1740,8 @@ class Prophet(object):
             )
         elif self.growth == "flat":
             expected = self.flat_trend(df["t"].values, m)
+        elif self.growth == "stepwise":
+            expected = self.stepwise(df["t"].values, self.params["m_"], self.changepoints_t)
         else:
             raise NotImplementedError
         uncertainty = self._sample_uncertainty(df, n_samples, iteration)
@@ -1706,7 +1796,7 @@ class Prophet(object):
                     n_length=n_length,
                     single_diff=single_diff,
                 )
-            elif self.growth == "flat":
+            elif self.growth == "flat" or self.growth == 'stepwise':
                 # no trend uncertainty when there is no growth
                 uncertainties = np.zeros((n_samples, n_length))
             else:
